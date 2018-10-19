@@ -159,3 +159,112 @@ From top to bottom the key additions are:
 - `plugins` configuration scripts for notifications, validate, and moment
 - `router` added the `auth` middleware
 - Last is the configuration section for `auth` and `axios`
+
+When you add plugins to Nuxt, they're virtually the same every time. If you run into problems where `document` or `window` is undefined, this is because a dependency expects a browser, but Nuxt does Nodejs Server-Side Rendering by default. `document` nor `window` exist here.
+
+## Add some style
+
+Create `~/app/scss/app.scss`:
+
+```scss
+@import '~bootstrap/scss/bootstrap';
+```
+
+## Make some plugin files
+
+`~/plugins/vue-notifications.js`:
+
+```javascript
+import Vue from 'vue'
+import Notifications from 'vue-notifications'
+import velocity from 'velocity-animate'
+
+Vue.use(Notifications, {velocity});
+```
+
+`~/plugins/vue-moment.js`:
+
+```javascript
+import Vue from 'vue'
+import VueMoment from 'vue-moment'
+
+Vue.use(VueMoment);
+```
+
+`~/plugins/vee-validate.js`:
+
+```javascript
+import Vue from 'vue'
+import VeeValidate from 'vee-validate'
+
+Vue.use(VeeValidate, {
+  inject: true,
+  fieldsBagName: 'veeFields'
+});
+```
+
+Next we have to add support for i18n. Create a folder called `config/locales`, and in this folder, create an `index.js` file:
+
+```javascript
+module.exports = {
+  locales: [
+    {
+      code: 'en',
+      iso: 'en-US',
+      name: 'English',
+      file: 'en.json'
+    }
+  ],
+  defaultLocale: 'en',
+  seo: true,
+  lazy: true,
+  detectBrowserLanguage: {
+    cookieKey: 'redirected',
+    useCookie: true
+  },
+  langDir: 'config/locales/',
+  parsePages: false,
+  pages: {},
+  vueI18n: {
+    fallbackLocale: 'en'
+  }
+}
+```
+
+It's easy to add a new locale by just duplicating the object in the `locales` array and adding the values needed. Now add `en.json` as a standard JSON formatted file:
+
+```json
+{
+  "actions": "Actions",
+  "yes": "Yes",
+  "no": "No",
+  "edit": "Edit",
+  "password": "Password",
+  "password_confirm": "Confirm Password",
+  "login": "Log In",
+  "forgot_password": "Forgot Password?",
+  "remove": "Remove",
+  "destroy_confirm_title": "Please Confirm",
+  "destroy_confirm": "Are you sure you want to remove this?",
+  "logout": "Log Out",
+  "back": "Back",
+  "save": "Save",
+  "update": "Update",
+  "forms": {
+    "errors": {
+      "required": "Please fill this out.",
+      "standard": "A server error occurred."
+    }
+  },
+  "cars": {
+    "singular": "car",
+    "plural": "cars",
+    "new": "New Car",
+    "edit": "Edit Car"
+  }
+}
+```
+
+Some people like to keep this file as flat as possible and then alphabetize it by key. Here, we have our entity objects defined and translate our pages from there. It's really whatever style you want to use here, just be consistent.
+
+That is our apps configuration, now let's build stuff!
