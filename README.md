@@ -175,18 +175,18 @@ Create `~/app/scss/app.scss`:
 `~/plugins/vue-notifications.js`:
 
 ```javascript
-import Vue from 'vue'
-import Notifications from 'vue-notifications'
-import velocity from 'velocity-animate'
+import Vue from 'vue';
+import Notifications from 'vue-notifications';
+import velocity from 'velocity-animate';
 
-Vue.use(Notifications, {velocity});
+Vue.use(Notifications, { velocity });
 ```
 
 `~/plugins/vue-moment.js`:
 
 ```javascript
-import Vue from 'vue'
-import VueMoment from 'vue-moment'
+import Vue from 'vue';
+import VueMoment from 'vue-moment';
 
 Vue.use(VueMoment);
 ```
@@ -194,8 +194,8 @@ Vue.use(VueMoment);
 `~/plugins/vee-validate.js`:
 
 ```javascript
-import Vue from 'vue'
-import VeeValidate from 'vee-validate'
+import Vue from 'vue';
+import VeeValidate from 'vee-validate';
 
 Vue.use(VeeValidate, {
   inject: true,
@@ -228,7 +228,7 @@ module.exports = {
   vueI18n: {
     fallbackLocale: 'en'
   }
-}
+};
 ```
 
 It's easy to add a new locale by just duplicating the object in the `locales` array and adding the values needed. Now add `en.json` as a standard JSON formatted file:
@@ -268,3 +268,71 @@ It's easy to add a new locale by just duplicating the object in the `locales` ar
 Some people like to keep this file as flat as possible and then alphabetize it by key. Here, we have our entity objects defined and translate our pages from there. It's really whatever style you want to use here, just be consistent.
 
 That is our apps configuration, now let's build stuff!
+
+## Start building stuff
+
+We probably want a more bootstrapped layout first. Open `~/layouts/default.vue` and add:
+
+```js
+<template>
+  <main>
+    <no-ssr>
+    <notifications group="alerts"
+                   position="bottom right">
+      <template slot="body" slot-scope="props">
+        <b-alert :show="props.item.duration || 3000"
+                 dismissible
+                 :variant="props.item.type || 'info'"
+                 @dismissed="props.item.timer=0">
+          <p>{{props.item.text}}</p>
+          <b-progress :variant="props.item.type"
+                      striped
+                      :animated="true"
+                      :max="props.item.duration"
+                      :value="props.item.timer"
+                      height="4px">
+          </b-progress>
+        </b-alert>
+      </template>
+    </notifications>
+    </no-ssr>
+    <b-row no-gutters class="mb-3">
+      <b-col class="bg-dark">
+        <b-navbar toggleable="md" type="dark" variant="dark">
+          <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
+          <b-navbar-brand href="/">My App</b-navbar-brand>
+          <b-collapse is-nav id="nav_collapse">
+            <b-navbar-nav>
+              <b-nav-item class="text-white" :to="'/cars'">{{$t('new_car')}}</b-nav-item>
+              <b-nav-item class="text-white" :to="'/admin'" v-if="admin">{{$t('admin')}}</b-nav-item>
+            </b-navbar-nav>
+            <b-navbar-nav class="ml-auto">
+              <b-nav-item class="text-white" :to="'login'" v-if="!$auth.loggedIn">{{$t('login')}}</b-nav-item>
+              <b-nav-item class="text-white" @click="logout" v-if="$auth.loggedIn">{{$t('logout')}}</b-nav-item>
+            </b-navbar-nav>
+          </b-collapse>
+        </b-navbar>
+      </b-col>
+    </b-row>
+    <b-container fluid>
+      <nuxt/>
+    </b-container>
+  </main>
+</template>
+<script>
+  export default {
+    methods: {
+      logout() {
+        this.$auth.logout()
+      },
+      admin() {
+        return this.$auth.loggedIn && this.$auth.user.admin
+      }
+    }
+  }
+</script>
+```
+
+Now we have notifications integrated with bootstrap, showing a countdown timer. Next to that is a pretty bland and basic bootstrap navbar. This is showing that a user has an 'admin' boolean set on it when they login, and that can toggle elements on or off. `nuxt-auth` provides the user object for us when we log in. Toward the bottom you see a `b-container` component holding our special `nuxt` component render tag where our pages will end up.
+
+Notice that if you configure a plugin with `ssr: false` then you also use the `no-ssr` component in the template. Otherwise you get an error from HMR complaining about the server content not matching the rendered content.
