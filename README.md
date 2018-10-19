@@ -336,3 +336,73 @@ We probably want a more bootstrapped layout first. Open `~/layouts/default.vue` 
 Now we have notifications integrated with bootstrap, showing a countdown timer. Next to that is a pretty bland and basic bootstrap navbar. This is showing that a user has an 'admin' boolean set on it when they login, and that can toggle elements on or off. `nuxt-auth` provides the user object for us when we log in. Toward the bottom you see a `b-container` component holding our special `nuxt` component render tag where our pages will end up.
 
 Notice that if you configure a plugin with `ssr: false` then you also use the `no-ssr` component in the template. Otherwise you get an error from HMR complaining about the server content not matching the rendered content.
+
+## Fetching, Storing, and Mutating Data with Vuex
+
+Nuxt makes it simple to configure modules for vuex. You just name it the same as the entity you want to manage. In this case, we're using _cars_, so let's make `~/store/cars.js`:
+
+```js
+import merge from 'lodash.merge';
+import assign from 'lodash.assign';
+
+export const state = () => ({ list: [], cars: {} });
+
+export const mutations = {
+  set(state, car) {
+    state.list = car;
+  },
+  add(state, value) {
+    merge(state.list, value);
+  },
+  remove(state, { car }) {
+    state.list.filter(c => car.id !== c.id);
+  },
+  mergeCars(state, form) {
+    assign(state.car, form);
+  },
+  setCars(state, form) {
+    state.car = form;
+  }
+};
+
+export const actions = {
+  async get({ commit }) {
+    await this.$axios.get(`/cars`).then(res => {
+      if (res.status === 200) {
+        commit('set', res.data);
+      }
+    });
+  },
+  async show({ commit }, params) {
+    await this.$axios.get(`/cars/${params.car_id}`).then(res => {
+      if (res.status === 200) {
+        commit('mergeCars', res.data);
+      }
+    });
+  },
+  async set({ commit }, cars) {
+    await commit('set', cars);
+  },
+  async form({ commit }, form) {
+    await commit('mergeCars', form);
+  },
+  async add({ commit }, car) {
+    await commit('add', car);
+  },
+  create({ commit }, params) {
+    return this.$axios.post(`/cars`, { car: params });
+  },
+  update({ commit }, params) {
+    return this.$axios.put(`/cars/${params.id}`, { car: params });
+  },
+  delete({ commit }, params) {
+    return this.$axios.delete(`/cars/${params.id}`);
+  }
+};
+```
+
+In our `state` we have two keys, one for holding the list of cars, and one for the current car we are looking at.
+
+Mutations are synchronous in vuex, which is important to note. This is organized such that `set`, `add`, `remove` all handle mutating the `list` state while `mergeCars, setCars` handle the `car` state.
+
+Actions however do not have to be synchronous. Which makes them a great place to do Ajax calls. We can return promises here, handle mutations, etc. with great ease.
